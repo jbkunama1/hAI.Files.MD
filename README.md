@@ -14,7 +14,7 @@
 Dieses Repository bietet eine minimalistische, aber praxistaugliche Struktur, um `files.md` als
 selbstgehosteten Docker-Stack (z. B. über Portainer) zu betreiben.
 
-Frontend und Sync-API laufen in **einem einzigen Container** – gebaut direkt aus dem offiziellen Upstream-Repo.
+Frontend (PWA) und Sync-API laufen in **einem einzigen Container** – gebaut direkt aus dem offiziellen Upstream-Repo.
 
 ---
 
@@ -31,6 +31,7 @@ Frontend und Sync-API laufen in **einem einzigen Container** – gebaut direkt a
 
 - Ein Container liefert sowohl das Frontend als auch die Sync-API aus.
 - Der Build erfolgt direkt aus dem geklonten Upstream-Repo (`/opt/filesmd/files.md`).
+- Sync wird aktiviert durch Setzen von `API_URL` in der Umgebung.
 
 ---
 
@@ -44,8 +45,8 @@ hAI.Files.MD/
 ├── index.html              # Landingpage für GitHub Pages (DE/EN)
 ├── LICENSE                 # MIT Lizenz
 └── app/
-    ├── storage/            # Volume für Notizen (wird zur Laufzeit angelegt)
-    └── tokens/             # Volume für Auth-Tokens (wird zur Laufzeit angelegt)
+    ├── storage/            # Volume für Notizen & Logs (Laufzeit)
+    └── tokens/             # Volume für Auth-Tokens (Laufzeit)
 ```
 
 > Das `files.md`-Upstream-Repo wird **neben** diesem Repo geklont: `/opt/filesmd/files.md`
@@ -70,32 +71,62 @@ hAI.Files.MD/
    mkdir -p hAI.Files.MD/app/storage hAI.Files.MD/app/tokens
    ```
 
-2. **Stack bauen und starten:**
+2. **TOKENS_SALT generieren** (einmalig):
+   ```bash
+   head -c 32 /dev/urandom | base64
+   ```
+   Den Wert als Umgebungsvariable setzen oder direkt in `docker-compose.yml` bei `TOKENS_SALT=` eintragen.
+
+3. **Stack bauen und starten:**
    ```bash
    cd /opt/filesmd/hAI.Files.MD
    docker compose build --no-cache
    docker compose up -d
    ```
 
-3. **Stack per Portainer deployen:**
+4. **Stack per Portainer deployen:**
    - In Portainer → *Stacks* → *Add stack*
    - Inhalt von `docker-compose.yml` einfügen
+   - Umgebungsvariable `TOKENS_SALT` setzen
    - Stack deployen
+
+---
+
+## ⚙️ Umgebungsvariablen
+
+| Variable | Pflicht | Beschreibung |
+|---|---|---|
+| `APP_URL` | empfohlen | URL der Web-App, z. B. `http://192.168.178.5:8080` |
+| `API_URL` | **für Sync nötig** | Aktiviert den Sync-Server – kann gleiche URL wie `APP_URL` sein |
+| `STORAGE_DIR` | ja | Pfad für Notizen-Dateien im Container |
+| `TOKENS_DIR` | ja | Pfad für Auth-Tokens im Container |
+| `TOKENS_SALT` | empfohlen | Zufallswert für Token-Signierung (einmalig generieren) |
+| `CERT_DIR` | nein | Pfad zu TLS-Zertifikaten (leer = kein HTTPS) |
+| `LOG_FILE` | nein | Pfad zur Log-Datei (default `/tmp/server.log`) |
+| `STORAGE_QUOTA_KB` | nein | Speicherlimit pro Nutzer in KB (default 1024 = 1 MB) |
+| `BOT_API_TOKEN` | nein | Telegram-Bot-Token (optional, ohne Token = reine Web-App) |
+
+> ⚠️ Ohne `API_URL` läuft der Server nur als Web-App ohne Sync-Funktion!
 
 ---
 
 ## 🌐 Nutzung
 
-- Aufruf im Browser: `http://DEIN-SERVER:8080`
-- Sync-API läuft auf demselben Port (eingebaut)
+- **Web-App:** `http://DEIN-SERVER:8080`
+- **Sync:** läuft automatisch auf demselben Port, sobald `API_URL` gesetzt ist
+- In der PWA (DevTools-Konsole) den API-Host setzen:
+  ```javascript
+  localStorage.setItem('ApiHost', 'http://DEIN-SERVER:8080');
+  ```
 
 ---
 
 ## 🧪 Anpassungen
 
-- **APP_URL** in `docker-compose.yml` auf deine Domain/IP setzen
-- Port 8080 bei Bedarf ändern (z. B. hinter Reverse Proxy auf 80/443)
-- Volumes an dein Backup-/Storage-Konzept anpassen
+- **APP_URL / API_URL** auf deine Domain oder LAN-IP setzen
+- Port 8080 bei Bedarf ändern (z. B. hinter Reverse Proxy auf 80/443)
+- `STORAGE_QUOTA_KB` erhöhen für mehr Speicher pro Nutzer (z. B. `102400` = 100 MB)
+- Volumes an dein Backup-Konzept anpassen
 
 ---
 
@@ -115,21 +146,21 @@ Der `context` in `docker-compose.yml` muss auf den geklonten Upstream-Ordner zei
 
 ---
 
-### ❌ Timeout beim Build
+### ❌ Sync funktioniert nicht
 
-Der Build liest nur lokale Dateien aus `/opt/filesmd/files.md` – kein Internet nötig.
-Wenn `go mod download` timeoutet, Docker-DNS prüfen:
+Prüfen ob `API_URL` gesetzt ist:
 ```bash
-docker run --rm alpine sh -c "nslookup proxy.golang.org"
+docker inspect files-md | grep API_URL
 ```
+Ohne `API_URL` startet die Sync-API gar nicht.
 
 ---
 
-### ❌ Kein Internet aus Docker-Build heraus (Test)
+### ❌ Timeout beim Build / kein Internet aus Docker
 
 ```bash
 curl -I https://github.com
-docker run --rm alpine sh -c "apk add git && git clone https://github.com/zakirullin/files.md.git /tmp/test"
+docker run --rm alpine sh -c "nslookup proxy.golang.org"
 ```
 
 ---

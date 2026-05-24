@@ -13,7 +13,11 @@ services:
       - /opt/filesmd/hAI.Files.MD/app/tokens:/app/tokens
     environment:
       - APP_URL=http://filesmd.arbeitermili.eu
+      - API_URL=http://filesmd.arbeitermili.eu
       - STORAGE_DIR=/app/storage
       - TOKENS_DIR=/app/tokens
+      - TOKENS_SALT=${TOKENS_SALT}
       - CERT_DIR=
+      - LOG_FILE=/app/storage/server.log
+      - STORAGE_QUOTA_KB=102400
     restart: unless-stopped

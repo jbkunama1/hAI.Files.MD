@@ -16,21 +16,26 @@
     .lang-switch { margin-top: 1rem; }
     .badge-row img { margin-right: 0.5rem; margin-top: 0.5rem; }
     pre { background: #0f172a; border: 1px solid #1e293b; padding: 1rem; border-radius: 0.5rem; overflow-x: auto; }
-    code { font-family: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-size: 0.9em; }
+    code { font-family: SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 0.9em; }
+    table { width: 100%; border-collapse: collapse; margin-top: 1rem; font-size: 0.9em; }
+    th { text-align: left; padding: 0.5rem 0.75rem; background: #1e293b; color: #94a3b8; }
+    td { padding: 0.5rem 0.75rem; border-bottom: 1px solid #1e293b; }
+    td code { background: #1e293b; padding: 0.1em 0.4em; border-radius: 0.25rem; }
     .warn { background: #1c1917; border-left: 3px solid #f59e0b; padding: 0.75rem 1rem; border-radius: 0 0.5rem 0.5rem 0; margin-top: 0.75rem; font-size: 0.9em; color: #fcd34d; }
+    .info { background: #0f2027; border-left: 3px solid #38bdf8; padding: 0.75rem 1rem; border-radius: 0 0.5rem 0.5rem 0; margin-top: 0.75rem; font-size: 0.9em; color: #7dd3fc; }
   </style>
 </head>
 <body>
   <div class="container">
     <div class="card">
       <h1>hAI.Files.MD</h1>
-      <p>Self-hosted Docker stack for <a href="https://github.com/zakirullin/files.md" target="_blank" rel="noopener noreferrer">files.md</a> – with PWA frontend and sync server.</p>
+      <p>Self-hosted Docker stack for <a href="https://github.com/zakirullin/files.md" target="_blank" rel="noopener noreferrer">files.md</a> – PWA frontend &amp; sync server in one container.</p>
       <div class="badge-row">
         <img src="https://img.shields.io/badge/status-alpha-orange" alt="status" />
         <img src="https://img.shields.io/badge/docker-compose-blue" alt="docker" />
         <img src="https://img.shields.io/badge/license-MIT-green" alt="license" />
       </div>
-      <div class="lang-switch">
+      <div class="lang-switch" style="margin-top:1rem">
         <strong>Language / Sprache:</strong>
         <a href="./README.md">🇩🇪 Deutsch</a> ·
         <a href="./README_en.md">🇬🇧 English</a>
@@ -38,41 +43,52 @@
     </div>
 
     <div class="card">
-      <h2>Quick start</h2>
-      <p>Clone both repos on your server, then deploy the stack with Docker Compose or Portainer.</p>
+      <h2>🛠️ Quick start</h2>
       <pre><code>sudo mkdir -p /opt/filesmd && cd /opt/filesmd
 git clone https://github.com/zakirullin/files.md.git
 git clone https://github.com/jbkunama1/hAI.Files.MD.git
-mkdir -p hAI.Files.MD/data hAI.Files.MD/app/storage
+mkdir -p hAI.Files.MD/app/storage hAI.Files.MD/app/tokens
 
 cd hAI.Files.MD
-# Edit docker-compose.yml: set SALT and HOST
-docker compose build
+# Set TOKENS_SALT in docker-compose.yml
+docker compose build --no-cache
 docker compose up -d
 </code></pre>
-      <p>Open the PWA at <code>http://YOUR-SERVER:8080</code> and point it to the sync server at <code>http://YOUR-SERVER:3333</code> via <code>localStorage.setItem('ApiHost', 'http://YOUR-SERVER:3333')</code> in the browser console.</p>
+      <div class="info">💡 Generate <code>TOKENS_SALT</code>: <code>head -c 32 /dev/urandom | base64</code></div>
+    </div>
+
+    <div class="card">
+      <h2>⚙️ Environment variables</h2>
+      <table>
+        <tr><th>Variable</th><th>Required</th><th>Description</th></tr>
+        <tr><td><code>APP_URL</code></td><td>recommended</td><td>URL of the web app</td></tr>
+        <tr><td><code>API_URL</code></td><td><strong>for sync</strong></td><td>Enables sync server – same URL as APP_URL is fine</td></tr>
+        <tr><td><code>STORAGE_DIR</code></td><td>yes</td><td>Notes storage path</td></tr>
+        <tr><td><code>TOKENS_DIR</code></td><td>yes</td><td>Auth tokens path</td></tr>
+        <tr><td><code>TOKENS_SALT</code></td><td>recommended</td><td>Random value for token signing</td></tr>
+        <tr><td><code>CERT_DIR</code></td><td>no</td><td>TLS certificate path (empty = HTTP only)</td></tr>
+        <tr><td><code>LOG_FILE</code></td><td>no</td><td>Log file path</td></tr>
+        <tr><td><code>STORAGE_QUOTA_KB</code></td><td>no</td><td>Storage limit per user in KB (default 1024)</td></tr>
+        <tr><td><code>BOT_API_TOKEN</code></td><td>no</td><td>Telegram bot token (optional)</td></tr>
+      </table>
+      <div class="warn">⚠️ Without <code>API_URL</code> the sync server will <strong>not start</strong>!</div>
     </div>
 
     <div class="card">
       <h2>🐛 Troubleshooting</h2>
-
       <h3>❌ path not found (Portainer)</h3>
-      <p>Portainer cannot find the build context. Clone both repos first (see Quick start above), then use absolute paths in <code>docker-compose.yml</code>:</p>
-      <pre><code>files-md-sync:
-  build:
-    context: /opt/filesmd
-    dockerfile: /opt/filesmd/hAI.Files.MD/Dockerfile.sync</code></pre>
+      <p>Clone both repos first, then use absolute paths in <code>docker-compose.yml</code>:</p>
+      <pre><code>build:
+  context: /opt/filesmd/files.md
+  dockerfile: /opt/filesmd/files.md/Dockerfile</code></pre>
 
-      <h3>❌ Timeout during build</h3>
-      <p>The default <code>Dockerfile.sync</code> clones the upstream repo during build. If your server has no outbound internet access this will time out.</p>
-      <p><strong>Fix:</strong> Use the local build variant – copy from the already-cloned host folder instead:</p>
-      <pre><code># In Dockerfile.sync replace the git clone lines with:
-COPY files.md/sync ./sync</code></pre>
-      <div class="warn">⚠️ <code>context: /opt/filesmd</code> must point to the <strong>parent folder</strong> containing both repos, so the <code>COPY files.md/sync</code> path resolves correctly.</div>
+      <h3>❌ Sync not working</h3>
+      <p>Check that <code>API_URL</code> is set:</p>
+      <pre><code>docker inspect files-md | grep API_URL</code></pre>
 
-      <h3>❌ Test internet access from Docker</h3>
+      <h3>❌ Timeout / no internet from Docker</h3>
       <pre><code>curl -I https://github.com
-docker run --rm alpine sh -c "apk add git && git clone https://github.com/zakirullin/files.md.git /tmp/test"</code></pre>
+docker run --rm alpine sh -c "nslookup proxy.golang.org"</code></pre>
     </div>
   </div>
 </body>

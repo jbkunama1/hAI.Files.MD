@@ -13,7 +13,7 @@
 
 This repository provides a minimal yet practical structure to run `files.md` as a self-hosted Docker stack (e.g. via Portainer).
 
-Frontend and sync API run in a **single container**, built directly from the official upstream repo.
+Frontend (PWA) and sync API run in a **single container**, built directly from the official upstream repo.
 
 ---
 
@@ -30,6 +30,7 @@ Frontend and sync API run in a **single container**, built directly from the off
 
 - One container serves both the frontend and the sync API.
 - The build uses the locally cloned upstream repo (`/opt/filesmd/files.md`).
+- Sync is enabled by setting `API_URL` in the environment.
 
 ---
 
@@ -43,8 +44,8 @@ hAI.Files.MD/
 ├── index.html              # GitHub Pages landing (DE/EN)
 ├── LICENSE                 # MIT license
 └── app/
-    ├── storage/            # notes volume (created at runtime)
-    └── tokens/             # auth tokens volume (created at runtime)
+    ├── storage/            # notes & logs volume (runtime)
+    └── tokens/             # auth tokens volume (runtime)
 ```
 
 > The `files.md` upstream repo is cloned **next to** this project: `/opt/filesmd/files.md`
@@ -69,32 +70,62 @@ hAI.Files.MD/
    mkdir -p hAI.Files.MD/app/storage hAI.Files.MD/app/tokens
    ```
 
-2. **Build and start the stack:**
+2. **Generate TOKENS_SALT** (once):
+   ```bash
+   head -c 32 /dev/urandom | base64
+   ```
+   Set as environment variable or paste directly into `docker-compose.yml` at `TOKENS_SALT=`.
+
+3. **Build and start the stack:**
    ```bash
    cd /opt/filesmd/hAI.Files.MD
    docker compose build --no-cache
    docker compose up -d
    ```
 
-3. **Deploy via Portainer:**
+4. **Deploy via Portainer:**
    - Portainer → *Stacks* → *Add stack*
    - Paste `docker-compose.yml`
+   - Set environment variable `TOKENS_SALT`
    - Deploy stack
+
+---
+
+## ⚙️ Environment variables
+
+| Variable | Required | Description |
+|---|---|---|
+| `APP_URL` | recommended | URL of the web app, e.g. `http://192.168.178.5:8080` |
+| `API_URL` | **required for sync** | Enables the sync server – can be the same URL as `APP_URL` |
+| `STORAGE_DIR` | yes | Path for notes files inside the container |
+| `TOKENS_DIR` | yes | Path for auth tokens inside the container |
+| `TOKENS_SALT` | recommended | Random value for token signing (generate once) |
+| `CERT_DIR` | no | Path to TLS certificates (empty = no HTTPS) |
+| `LOG_FILE` | no | Log file path (default `/tmp/server.log`) |
+| `STORAGE_QUOTA_KB` | no | Storage limit per user in KB (default 1024 = 1 MB) |
+| `BOT_API_TOKEN` | no | Telegram bot token (optional, without token = web-only) |
+
+> ⚠️ Without `API_URL` the sync API will not start!
 
 ---
 
 ## 🌐 Usage
 
-- Open in browser: `http://YOUR-SERVER:8080`
-- Sync API runs on the same port (built-in)
+- **Web app:** `http://YOUR-SERVER:8080`
+- **Sync:** runs automatically on the same port once `API_URL` is set
+- Set the API host in the PWA (DevTools console):
+  ```javascript
+  localStorage.setItem('ApiHost', 'http://YOUR-SERVER:8080');
+  ```
 
 ---
 
 ## 🧪 Customization
 
-- Set **APP_URL** in `docker-compose.yml` to your domain/IP
+- Set **APP_URL / API_URL** to your domain or LAN IP
 - Change port 8080 if needed (e.g. behind reverse proxy on 80/443)
-- Adjust volumes to your backup/storage strategy
+- Increase `STORAGE_QUOTA_KB` for more storage per user (e.g. `102400` = 100 MB)
+- Adjust volumes to your backup strategy
 
 ---
 
@@ -114,21 +145,21 @@ The `context` in `docker-compose.yml` must point to the cloned upstream folder:
 
 ---
 
-### ❌ Timeout during build
+### ❌ Sync not working
 
-The build only reads local files from `/opt/filesmd/files.md` — no internet required.
-If `go mod download` times out, check Docker DNS:
+Check if `API_URL` is set:
 ```bash
-docker run --rm alpine sh -c "nslookup proxy.golang.org"
+docker inspect files-md | grep API_URL
 ```
+Without `API_URL` the sync API does not start at all.
 
 ---
 
-### ❌ No internet access from Docker build (test)
+### ❌ Timeout during build / no internet from Docker
 
 ```bash
 curl -I https://github.com
-docker run --rm alpine sh -c "apk add git && git clone https://github.com/zakirullin/files.md.git /tmp/test"
+docker run --rm alpine sh -c "nslookup proxy.golang.org"
 ```
 
 ---
