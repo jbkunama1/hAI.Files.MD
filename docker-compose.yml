@@ -7,7 +7,7 @@ services:
       dockerfile: /opt/filesmd/files.md/Dockerfile
     container_name: files-md
     ports:
-      - "8080:8080"
+      - "3333:8080"
     volumes:
       - /opt/filesmd/hAI.Files.MD/app/storage:/app/storage
       - /opt/filesmd/hAI.Files.MD/app/tokens:/app/tokens
@@ -19,5 +19,5 @@ services:
       - TOKENS_SALT=${TOKENS_SALT}
       - CERT_DIR=
       - LOG_FILE=/app/storage/server.log
-      - STORAGE_QUOTA_KB=102400
+      - STORAGE_QUOTA_KB=1024000
     restart: unless-stopped
