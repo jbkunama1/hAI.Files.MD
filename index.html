@@ -9,13 +9,15 @@
     .container { max-width: 960px; margin: 0 auto; padding: 2rem 1rem 3rem; }
     h1 { font-size: 2.4rem; margin-bottom: 0.5rem; }
     h2 { margin-top: 2rem; }
+    h3 { margin-top: 1.5rem; color: #f87171; }
     a { color: #38bdf8; text-decoration: none; }
     a:hover { text-decoration: underline; }
     .card { background: #020617; border-radius: 0.75rem; padding: 1.5rem; margin-top: 1.5rem; box-shadow: 0 20px 40px rgba(0,0,0,0.4); }
     .lang-switch { margin-top: 1rem; }
     .badge-row img { margin-right: 0.5rem; margin-top: 0.5rem; }
-    pre { background: #020617; padding: 1rem; border-radius: 0.5rem; overflow-x: auto; }
-    code { font-family: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+    pre { background: #0f172a; border: 1px solid #1e293b; padding: 1rem; border-radius: 0.5rem; overflow-x: auto; }
+    code { font-family: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-size: 0.9em; }
+    .warn { background: #1c1917; border-left: 3px solid #f59e0b; padding: 0.75rem 1rem; border-radius: 0 0.5rem 0.5rem 0; margin-top: 0.75rem; font-size: 0.9em; color: #fcd34d; }
   </style>
 </head>
 <body>
@@ -37,16 +39,40 @@
 
     <div class="card">
       <h2>Quick start</h2>
-      <p>Clone this repository and the upstream <code>files.md</code> repo on your server, then deploy the stack with Docker Compose or Portainer.</p>
-      <pre><code>git clone https://github.com/jbkunama1/hAI.Files.MD.git
+      <p>Clone both repos on your server, then deploy the stack with Docker Compose or Portainer.</p>
+      <pre><code>sudo mkdir -p /opt/filesmd && cd /opt/filesmd
+git clone https://github.com/zakirullin/files.md.git
+git clone https://github.com/jbkunama1/hAI.Files.MD.git
+mkdir -p hAI.Files.MD/data hAI.Files.MD/app/storage
+
 cd hAI.Files.MD
-
-# adjust docker-compose.yml (HOST, SALT)
-
+# Edit docker-compose.yml: set SALT and HOST
 docker compose build
 docker compose up -d
 </code></pre>
-      <p>Open the PWA at <code>http://YOUR-SERVER:8080</code> and point it to your sync server at <code>http://YOUR-SERVER:3333</code> via <code>localStorage.setItem('ApiHost', 'http://YOUR-SERVER:3333')</code> in the browser console.</p>
+      <p>Open the PWA at <code>http://YOUR-SERVER:8080</code> and point it to the sync server at <code>http://YOUR-SERVER:3333</code> via <code>localStorage.setItem('ApiHost', 'http://YOUR-SERVER:3333')</code> in the browser console.</p>
+    </div>
+
+    <div class="card">
+      <h2>🐛 Troubleshooting</h2>
+
+      <h3>❌ path not found (Portainer)</h3>
+      <p>Portainer cannot find the build context. Clone both repos first (see Quick start above), then use absolute paths in <code>docker-compose.yml</code>:</p>
+      <pre><code>files-md-sync:
+  build:
+    context: /opt/filesmd
+    dockerfile: /opt/filesmd/hAI.Files.MD/Dockerfile.sync</code></pre>
+
+      <h3>❌ Timeout during build</h3>
+      <p>The default <code>Dockerfile.sync</code> clones the upstream repo during build. If your server has no outbound internet access this will time out.</p>
+      <p><strong>Fix:</strong> Use the local build variant – copy from the already-cloned host folder instead:</p>
+      <pre><code># In Dockerfile.sync replace the git clone lines with:
+COPY files.md/sync ./sync</code></pre>
+      <div class="warn">⚠️ <code>context: /opt/filesmd</code> must point to the <strong>parent folder</strong> containing both repos, so the <code>COPY files.md/sync</code> path resolves correctly.</div>
+
+      <h3>❌ Test internet access from Docker</h3>
+      <pre><code>curl -I https://github.com
+docker run --rm alpine sh -c "apk add git && git clone https://github.com/zakirullin/files.md.git /tmp/test"</code></pre>
     </div>
   </div>
 </body>
