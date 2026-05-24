@@ -25,7 +25,7 @@ Frontend (PWA) and sync API run in a **single container**, built directly from t
 +------------+------------+
              |
              v
-   http://SERVER:8080  (PWA + Sync API)
+   http://SERVER:PORT  (PWA + Sync API)
 ```
 
 - One container serves both the frontend and the sync API.
@@ -74,7 +74,7 @@ hAI.Files.MD/
    ```bash
    head -c 32 /dev/urandom | base64
    ```
-   Set as environment variable or paste directly into `docker-compose.yml` at `TOKENS_SALT=`.
+   Paste into `docker-compose.yml` at `TOKENS_SALT=`.
 
 3. **Build and start the stack:**
    ```bash
@@ -95,7 +95,7 @@ hAI.Files.MD/
 
 | Variable | Required | Description |
 |---|---|---|
-| `APP_URL` | recommended | URL of the web app, e.g. `http://192.168.178.5:8080` |
+| `APP_URL` | recommended | URL of the web app, e.g. `http://192.168.178.21:3333` |
 | `API_URL` | **required for sync** | Enables the sync server – can be the same URL as `APP_URL` |
 | `STORAGE_DIR` | yes | Path for notes files inside the container |
 | `TOKENS_DIR` | yes | Path for auth tokens inside the container |
@@ -109,22 +109,60 @@ hAI.Files.MD/
 
 ---
 
+## 🔄 Using sync – same MDs on all devices
+
+### One-time setup per device
+
+Open the PWA in your browser, then in the **DevTools console** (F12 → Console):
+
+```javascript
+localStorage.setItem('ApiHost', 'http://YOUR-SERVER:PORT');
+```
+
+That’s it – the PWA will sync automatically from now on. All devices pointing to the same server share the same markdown files instantly.
+
+### How sync works
+
+```text
+Phone  ──┬
+PC     ──┼──►  http://SERVER:PORT  ──►  /app/storage
+Tablet ──┘
+```
+
+All devices read and write to the same server. Changes appear on all devices within seconds.
+
+### Multiple servers / shared salt
+
+Using the same `TOKENS_SALT` across multiple servers makes tokens valid on all of them. Different salts = fully independent instances.
+
+---
+
+## 🌐 Accessing from outside your LAN
+
+Options for access on the go (mobile network, other Wi-Fi):
+
+| Option | Effort | Description |
+|---|---|---|
+| **Domain + port forwarding** | medium | Forward port in router to server, domain points to public IP |
+| **VPN (e.g. WireGuard)** | medium | Device connects via VPN to home network, uses LAN IP |
+| **Cloudflare Tunnel** | low | No open port needed, free, works behind CGNAT |
+
+> 💡 Recommended for beginners: **Cloudflare Tunnel** – no open port, no DynDNS required.
+
+---
+
 ## 🌐 Usage
 
-- **Web app:** `http://YOUR-SERVER:8080`
+- **Web app:** `http://YOUR-SERVER:PORT`
 - **Sync:** runs automatically on the same port once `API_URL` is set
-- Set the API host in the PWA (DevTools console):
-  ```javascript
-  localStorage.setItem('ApiHost', 'http://YOUR-SERVER:8080');
-  ```
 
 ---
 
 ## 🧪 Customization
 
 - Set **APP_URL / API_URL** to your domain or LAN IP
-- Change port 8080 if needed (e.g. behind reverse proxy on 80/443)
-- Increase `STORAGE_QUOTA_KB` for more storage per user (e.g. `102400` = 100 MB)
+- Change port if needed (e.g. behind reverse proxy on 80/443)
+- Increase `STORAGE_QUOTA_KB` for more storage per user
 - Adjust volumes to your backup strategy
 
 ---
@@ -136,7 +174,6 @@ hAI.Files.MD/
 Portainer cannot find the build context because the repos have not been cloned yet.
 
 **Fix:** Clone repos first (see Setup steps above).
-The `context` in `docker-compose.yml` must point to the cloned upstream folder:
 ```yaml
     build:
       context: /opt/filesmd/files.md
@@ -151,7 +188,6 @@ Check if `API_URL` is set:
 ```bash
 docker inspect files-md | grep API_URL
 ```
-Without `API_URL` the sync API does not start at all.
 
 ---
 

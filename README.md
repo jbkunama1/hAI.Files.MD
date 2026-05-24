@@ -26,7 +26,7 @@ Frontend (PWA) und Sync-API laufen in **einem einzigen Container** – gebaut di
 +------------+------------+
              |
              v
-   http://SERVER:8080  (PWA + Sync-API)
+   http://SERVER:PORT  (PWA + Sync-API)
 ```
 
 - Ein Container liefert sowohl das Frontend als auch die Sync-API aus.
@@ -75,7 +75,7 @@ hAI.Files.MD/
    ```bash
    head -c 32 /dev/urandom | base64
    ```
-   Den Wert als Umgebungsvariable setzen oder direkt in `docker-compose.yml` bei `TOKENS_SALT=` eintragen.
+   Den Wert in `docker-compose.yml` bei `TOKENS_SALT=` eintragen.
 
 3. **Stack bauen und starten:**
    ```bash
@@ -96,7 +96,7 @@ hAI.Files.MD/
 
 | Variable | Pflicht | Beschreibung |
 |---|---|---|
-| `APP_URL` | empfohlen | URL der Web-App, z. B. `http://192.168.178.5:8080` |
+| `APP_URL` | empfohlen | URL der Web-App, z. B. `http://192.168.178.21:3333` |
 | `API_URL` | **für Sync nötig** | Aktiviert den Sync-Server – kann gleiche URL wie `APP_URL` sein |
 | `STORAGE_DIR` | ja | Pfad für Notizen-Dateien im Container |
 | `TOKENS_DIR` | ja | Pfad für Auth-Tokens im Container |
@@ -110,22 +110,60 @@ hAI.Files.MD/
 
 ---
 
+## 🔄 Sync nutzen – gleiche MDs auf allen Geräten
+
+### Einmalig pro Gerät einrichten
+
+Die PWA im Browser öffnen, dann in der **DevTools-Konsole** (F12 → Console):
+
+```javascript
+localStorage.setItem('ApiHost', 'http://DEIN-SERVER:PORT');
+```
+
+Das reicht – ab sofort synct die PWA automatisch mit dem Server. Alle Geräte, die auf denselben Server zeigen, haben automatisch dieselben Markdown-Dateien.
+
+### Wie der Sync funktioniert
+
+```text
+Handy  ──┬
+PC     ──┼──►  http://SERVER:PORT  ──►  /app/storage
+Tablet ──┘
+```
+
+Alle Geräte schreiben und lesen vom selben Server. Änderungen sind innerhalb von Sekunden auf allen Geräten sichtbar.
+
+### Mehrere Server / gleicher Salt
+
+Wenn du denselben `TOKENS_SALT` auf mehreren Servern verwendest, sind Tokens serverunabhängig gültig. Unterschiedliche Salts = unabhängige Instanzen.
+
+---
+
+## 🌐 Von außerhalb des LANs zugreifen
+
+Folgende Optionen ermöglichen Zugriff unterwegs (Mobilnetz, anderes WLAN):
+
+| Option | Aufwand | Beschreibung |
+|---|---|---|
+| **Domain + Portfreigabe** | mittel | Port im Router auf Server weiterleiten, Domain zeigt auf öffentliche IP |
+| **VPN (z. B. WireGuard)** | mittel | Gerät wählt sich per VPN ins Heimnetz ein, nutzt dann LAN-IP |
+| **Cloudflare Tunnel** | gering | Kein offener Port nötig, kostenlos, einfach einzurichten |
+
+> 💡 Empfehlung für Einsteiger: **Cloudflare Tunnel** – kein offener Port, kein DynDNS, funktioniert hinter CGNAT.
+
+---
+
 ## 🌐 Nutzung
 
-- **Web-App:** `http://DEIN-SERVER:8080`
+- **Web-App:** `http://DEIN-SERVER:PORT`
 - **Sync:** läuft automatisch auf demselben Port, sobald `API_URL` gesetzt ist
-- In der PWA (DevTools-Konsole) den API-Host setzen:
-  ```javascript
-  localStorage.setItem('ApiHost', 'http://DEIN-SERVER:8080');
-  ```
 
 ---
 
 ## 🧪 Anpassungen
 
 - **APP_URL / API_URL** auf deine Domain oder LAN-IP setzen
-- Port 8080 bei Bedarf ändern (z. B. hinter Reverse Proxy auf 80/443)
-- `STORAGE_QUOTA_KB` erhöhen für mehr Speicher pro Nutzer (z. B. `102400` = 100 MB)
+- Port bei Bedarf ändern (z. B. hinter Reverse Proxy auf 80/443)
+- `STORAGE_QUOTA_KB` erhöhen für mehr Speicher pro Nutzer
 - Volumes an dein Backup-Konzept anpassen
 
 ---

@@ -23,6 +23,7 @@
     td code { background: #1e293b; padding: 0.1em 0.4em; border-radius: 0.25rem; }
     .warn { background: #1c1917; border-left: 3px solid #f59e0b; padding: 0.75rem 1rem; border-radius: 0 0.5rem 0.5rem 0; margin-top: 0.75rem; font-size: 0.9em; color: #fcd34d; }
     .info { background: #0f2027; border-left: 3px solid #38bdf8; padding: 0.75rem 1rem; border-radius: 0 0.5rem 0.5rem 0; margin-top: 0.75rem; font-size: 0.9em; color: #7dd3fc; }
+    .tip { background: #052e16; border-left: 3px solid #4ade80; padding: 0.75rem 1rem; border-radius: 0 0.5rem 0.5rem 0; margin-top: 0.75rem; font-size: 0.9em; color: #86efac; }
   </style>
 </head>
 <body>
@@ -50,11 +51,33 @@ git clone https://github.com/jbkunama1/hAI.Files.MD.git
 mkdir -p hAI.Files.MD/app/storage hAI.Files.MD/app/tokens
 
 cd hAI.Files.MD
-# Set TOKENS_SALT in docker-compose.yml
+# TOKENS_SALT in docker-compose.yml eintragen
 docker compose build --no-cache
 docker compose up -d
 </code></pre>
-      <div class="info">💡 Generate <code>TOKENS_SALT</code>: <code>head -c 32 /dev/urandom | base64</code></div>
+      <div class="info">💡 <code>TOKENS_SALT</code> generieren: <code>head -c 32 /dev/urandom | base64</code></div>
+    </div>
+
+    <div class="card">
+      <h2>🔄 Sync – gleiche MDs auf allen Geräten</h2>
+      <p>Einmalig pro Gerät in der <strong>DevTools-Konsole</strong> (F12 → Console) ausführen:</p>
+      <pre><code>localStorage.setItem('ApiHost', 'http://DEIN-SERVER:PORT');</code></pre>
+      <p>Ab sofort synct die PWA automatisch. Alle Geräte, die auf denselben Server zeigen, teilen dieselben Markdown-Dateien.</p>
+      <pre><code>Handy  ──┬
+PC     ──┼──►  http://SERVER:PORT  ──►  /app/storage
+Tablet ──┘</code></pre>
+      <div class="warn">⚠️ Ohne <code>API_URL</code> in der docker-compose.yml startet die Sync-API <strong>nicht</strong>!</div>
+    </div>
+
+    <div class="card">
+      <h2>🌐 Von außerhalb des LANs zugreifen</h2>
+      <table>
+        <tr><th>Option</th><th>Aufwand</th><th>Beschreibung</th></tr>
+        <tr><td>Domain + Portfreigabe</td><td>mittel</td><td>Port im Router weiterleiten, Domain auf öffentliche IP</td></tr>
+        <tr><td>VPN (WireGuard)</td><td>mittel</td><td>Gerät wählt sich per VPN ein, nutzt LAN-IP</td></tr>
+        <tr><td><strong>Cloudflare Tunnel</strong></td><td>gering</td><td>Kein offener Port, kostenlos, funktioniert hinter CGNAT</td></tr>
+      </table>
+      <div class="tip">💡 Empfehlung: <strong>Cloudflare Tunnel</strong> – kein offener Port, kein DynDNS, einfachste Einrichtung.</div>
     </div>
 
     <div class="card">
@@ -71,22 +94,21 @@ docker compose up -d
         <tr><td><code>STORAGE_QUOTA_KB</code></td><td>no</td><td>Storage limit per user in KB (default 1024)</td></tr>
         <tr><td><code>BOT_API_TOKEN</code></td><td>no</td><td>Telegram bot token (optional)</td></tr>
       </table>
-      <div class="warn">⚠️ Without <code>API_URL</code> the sync server will <strong>not start</strong>!</div>
     </div>
 
     <div class="card">
       <h2>🐛 Troubleshooting</h2>
       <h3>❌ path not found (Portainer)</h3>
-      <p>Clone both repos first, then use absolute paths in <code>docker-compose.yml</code>:</p>
+      <p>Repos zuerst klonen, dann absoluten Pfad in <code>docker-compose.yml</code> setzen:</p>
       <pre><code>build:
   context: /opt/filesmd/files.md
   dockerfile: /opt/filesmd/files.md/Dockerfile</code></pre>
 
-      <h3>❌ Sync not working</h3>
-      <p>Check that <code>API_URL</code> is set:</p>
+      <h3>❌ Sync funktioniert nicht</h3>
+      <p>Prüfen ob <code>API_URL</code> gesetzt ist:</p>
       <pre><code>docker inspect files-md | grep API_URL</code></pre>
 
-      <h3>❌ Timeout / no internet from Docker</h3>
+      <h3>❌ Timeout / kein Internet aus Docker</h3>
       <pre><code>curl -I https://github.com
 docker run --rm alpine sh -c "nslookup proxy.golang.org"</code></pre>
     </div>
