@@ -1,0 +1,35 @@
+version: "3.9"
+
+services:
+  files-md-app:
+    image: node:20-alpine
+    container_name: files-md-app
+    working_dir: /usr/src/app
+    command: ["sh", "-c", "npm install && npm run build && npx serve -s dist -l 8080"]
+    ports:
+      - "8080:8080"
+    volumes:
+      - ../files.md:/usr/src/app:ro
+      - ./data:/usr/src/app/.filesmd
+    environment:
+      - HOST=0.0.0.0
+    restart: unless-stopped
+
+  files-md-sync:
+    build:
+      context: .
+      dockerfile: Dockerfile.sync
+    container_name: files-md-sync
+    ports:
+      - "3333:3333"
+    volumes:
+      - ./app/storage:/app/storage
+    environment:
+      - HOST=0.0.0.0
+      - PORT=3333
+      - SALT=${SALT}
+    restart: unless-stopped
+
+volumes:
+  files-md-data:
+  files-md-sync-storage:
