@@ -1,6 +1,6 @@
 # hAI.Files.MD 🇬🇧📚🧠
 
-> Self-hosted sync server & frontend setup for [files.md](https://github.com/zakirullin/files.md), optimized for Docker, Portainer and home lab environments.
+> Self-hosted Docker stack for [files.md](https://github.com/zakirullin/files.md), optimized for Portainer and home lab environments.
 
 ![Status](https://img.shields.io/badge/status-alpha-orange)
 ![Docker](https://img.shields.io/badge/docker-compose-blue)
@@ -11,12 +11,9 @@
 
 ## 🚀 Idea
 
-This repository provides a minimal yet practical structure to run `files.md` with:
+This repository provides a minimal yet practical structure to run `files.md` as a self-hosted Docker stack (e.g. via Portainer).
 
-- a **PWA frontend** (browser app)
-- a **self-hosted sync server**
-
-as a Docker stack (for example via Portainer).
+Frontend and sync API run in a **single container**, built directly from the official upstream repo.
 
 ---
 
@@ -28,14 +25,11 @@ as a Docker stack (for example via Portainer).
 +------------+------------+
              |
              v
-   http://SERVER:8080  (PWA frontend)
-             |
-             v
-   http://SERVER:3333  (sync server)
+   http://SERVER:8080  (PWA + Sync API)
 ```
 
-- `files-md-app` → builds the official `files.md` frontend from the upstream repository.
-- `files-md-sync` → builds and runs the Go-based sync server.
+- One container serves both the frontend and the sync API.
+- The build uses the locally cloned upstream repo (`/opt/filesmd/files.md`).
 
 ---
 
@@ -44,17 +38,16 @@ as a Docker stack (for example via Portainer).
 ```text
 hAI.Files.MD/
 ├── docker-compose.yml      # stack definition
-├── Dockerfile.sync         # build for sync server
 ├── README.md               # German
-├── README_en.md            # English
+├── README_en.md            # English (this file)
 ├── index.html              # GitHub Pages landing (DE/EN)
 ├── LICENSE                 # MIT license
-├── data/                   # PWA data volume (runtime)
 └── app/
-    └── storage/            # sync server data (runtime)
+    ├── storage/            # notes volume (created at runtime)
+    └── tokens/             # auth tokens volume (created at runtime)
 ```
 
-Note: the actual `files.md` upstream repo is cloned **next to** this project on your server (e.g. `/opt/filesmd/files.md`).
+> The `files.md` upstream repo is cloned **next to** this project: `/opt/filesmd/files.md`
 
 ---
 
@@ -68,35 +61,22 @@ Note: the actual `files.md` upstream repo is cloned **next to** this project on 
 
 ## 🛠️ Setup steps (TL;DR)
 
-1. **Clone upstream repo** on your server:
+1. **Clone both repos** on your server:
    ```bash
-   cd /opt
-   mkdir -p filesmd
-   cd filesmd
+   sudo mkdir -p /opt/filesmd && cd /opt/filesmd
    git clone https://github.com/zakirullin/files.md.git
-   ```
-
-2. **Clone this repo** (hAI.Files.MD):
-   ```bash
-   cd /opt/filesmd
    git clone https://github.com/jbkunama1/hAI.Files.MD.git
-   cd hAI.Files.MD
+   mkdir -p hAI.Files.MD/app/storage hAI.Files.MD/app/tokens
    ```
 
-3. **Generate SALT**:
-   ```bash
-   head -c 32 /dev/urandom | base64
-   ```
-   Put the value into `docker-compose.yml` at `SALT=`.
-
-4. **Test stack with Docker Compose:**
+2. **Build and start the stack:**
    ```bash
    cd /opt/filesmd/hAI.Files.MD
-   docker compose build
+   docker compose build --no-cache
    docker compose up -d
    ```
 
-5. **Deploy as Portainer stack:**
+3. **Deploy via Portainer:**
    - Portainer → *Stacks* → *Add stack*
    - Paste `docker-compose.yml`
    - Deploy stack
@@ -105,125 +85,47 @@ Note: the actual `files.md` upstream repo is cloned **next to** this project on 
 
 ## 🌐 Usage
 
-### Frontend (PWA)
-
-Open in browser:
-
-```text
-http://YOUR-SERVER:8080
-```
-
-### Sync server
-
-Sync server runs on:
-
-```text
-http://YOUR-SERVER:3333
-```
-
-In the `files.md` PWA (DevTools console):
-
-```javascript
-localStorage.setItem('ApiHost', 'http://YOUR-SERVER:3333');
-```
+- Open in browser: `http://YOUR-SERVER:8080`
+- Sync API runs on the same port (built-in)
 
 ---
 
 ## 🧪 Customization
 
-- Adjust **HOST** in `docker-compose.yml`
-- Change ports if needed
+- Set **APP_URL** in `docker-compose.yml` to your domain/IP
+- Change port 8080 if needed (e.g. behind reverse proxy on 80/443)
 - Adjust volumes to your backup/storage strategy
 
 ---
 
 ## 🐛 Troubleshooting
 
-### ❌ `path "/opt/filesmd/hAI.Files.MD" not found` (Portainer)
+### ❌ `path not found` (Portainer)
 
-Portainer cannot find the build context because the repos have not been cloned to the server yet.
+Portainer cannot find the build context because the repos have not been cloned yet.
 
-**Fix:** Clone repos on the server first:
-```bash
-sudo mkdir -p /opt/filesmd
-cd /opt/filesmd
-git clone https://github.com/zakirullin/files.md.git
-git clone https://github.com/jbkunama1/hAI.Files.MD.git
-mkdir -p hAI.Files.MD/data hAI.Files.MD/app/storage
-```
-
-Then use absolute build context in `docker-compose.yml`:
+**Fix:** Clone repos first (see Setup steps above).
+The `context` in `docker-compose.yml` must point to the cloned upstream folder:
 ```yaml
-  files-md-sync:
     build:
-      context: /opt/filesmd
-      dockerfile: /opt/filesmd/hAI.Files.MD/Dockerfile.sync
+      context: /opt/filesmd/files.md
+      dockerfile: /opt/filesmd/files.md/Dockerfile
 ```
 
 ---
 
-### ❌ Timeout during `docker compose build`
+### ❌ Timeout during build
 
-The `Dockerfile.sync` tries to clone `github.com/zakirullin/files.md.git` during the build. If the server has no internet access, this causes a timeout.
-
-**Fix:** Use a local build context — copy the upstream folder from the host instead of cloning.
-
-**Step 1 – Clone upstream repo locally** (if not done yet):
+The build only reads local files from `/opt/filesmd/files.md` — no internet required.
+If `go mod download` times out, check Docker DNS:
 ```bash
-cd /opt/filesmd
-git clone https://github.com/zakirullin/files.md.git
+docker run --rm alpine sh -c "nslookup proxy.golang.org"
 ```
-
-**Step 2 – Update `Dockerfile.sync`:**
-```dockerfile
-# syntax=docker/dockerfile:1
-
-FROM golang:1.22-alpine AS builder
-
-WORKDIR /app
-
-COPY files.md/sync ./sync
-
-WORKDIR /app/sync
-
-RUN go mod download && go build -o /app/files-md-sync
-
-FROM alpine:3.19
-
-WORKDIR /app
-
-RUN adduser -D -h /app filesmd
-
-COPY --from=builder /app/files-md-sync /app/files-md-sync
-
-RUN mkdir -p /app/storage && chown -R filesmd:filesmd /app
-
-USER filesmd
-
-ENV HOST=0.0.0.0
-ENV PORT=3333
-ENV SALT=""
-
-EXPOSE 3333
-
-CMD ["/app/files-md-sync"]
-```
-
-**Step 3 – Set build context in `docker-compose.yml` to parent folder:**
-```yaml
-  files-md-sync:
-    build:
-      context: /opt/filesmd
-      dockerfile: /opt/filesmd/hAI.Files.MD/Dockerfile.sync
-```
-
-> ⚠️ `context: /opt/filesmd` is required so that `COPY files.md/sync` works correctly inside the Dockerfile.
 
 ---
 
 ### ❌ No internet access from Docker build (test)
 
-Check if the server has internet access:
 ```bash
 curl -I https://github.com
 docker run --rm alpine sh -c "apk add git && git clone https://github.com/zakirullin/files.md.git /tmp/test"

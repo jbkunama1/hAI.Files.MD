@@ -1,6 +1,6 @@
 # hAI.Files.MD 🇩🇪📚🧠
 
-> Selbstgehosteter Sync-Server & Frontend-Setup für [files.md](https://github.com/zakirullin/files.md) – optimiert für Docker, Portainer und Home-Lab-Umgebungen.
+> Selbstgehosteter Docker-Stack für [files.md](https://github.com/zakirullin/files.md) – optimiert für Portainer und Home-Lab-Umgebungen.
 
 ![Status](https://img.shields.io/badge/status-alpha-orange)
 ![Docker](https://img.shields.io/badge/docker-compose-blue)
@@ -11,14 +11,10 @@
 
 ## 🚀 Idee
 
-Dieses Repository bietet eine minimalistische, aber praxistaugliche Struktur, um `files.md` mit
+Dieses Repository bietet eine minimalistische, aber praxistaugliche Struktur, um `files.md` als
+selbstgehosteten Docker-Stack (z. B. über Portainer) zu betreiben.
 
-- einem **PWA-Frontend** (Browser-App)
-- einem **self-hosted Sync-Server**
-
-als Docker-Stack (z. B. über Portainer) zu betreiben.
-
-Die Konfiguration ist bewusst einfach gehalten und kann direkt in ein Homelab-Setup übernommen werden.
+Frontend und Sync-API laufen in **einem einzigen Container** – gebaut direkt aus dem offiziellen Upstream-Repo.
 
 ---
 
@@ -30,14 +26,11 @@ Die Konfiguration ist bewusst einfach gehalten und kann direkt in ein Homelab-Se
 +------------+------------+
              |
              v
-   http://SERVER:8080  (PWA Frontend)
-             |
-             v
-   http://SERVER:3333  (Sync-Server)
+   http://SERVER:8080  (PWA + Sync-API)
 ```
 
-- `files-md-app` → baut das offizielle `files.md`-Frontend aus dem Upstream-Repository.
-- `files-md-sync` → baut und startet den Go-basierten Sync-Server.
+- Ein Container liefert sowohl das Frontend als auch die Sync-API aus.
+- Der Build erfolgt direkt aus dem geklonten Upstream-Repo (`/opt/filesmd/files.md`).
 
 ---
 
@@ -46,17 +39,16 @@ Die Konfiguration ist bewusst einfach gehalten und kann direkt in ein Homelab-Se
 ```text
 hAI.Files.MD/
 ├── docker-compose.yml      # Stack-Definition
-├── Dockerfile.sync         # Build für Sync-Server
 ├── README.md               # Diese Datei (DE)
 ├── README_en.md            # Englische Variante
 ├── index.html              # Landingpage für GitHub Pages (DE/EN)
 ├── LICENSE                 # MIT Lizenz
-├── data/                   # Volume für PWA-Daten (wird zur Laufzeit angelegt)
 └── app/
-    └── storage/            # Volume für Sync-Server-Daten (wird zur Laufzeit angelegt)
+    ├── storage/            # Volume für Notizen (wird zur Laufzeit angelegt)
+    └── tokens/             # Volume für Auth-Tokens (wird zur Laufzeit angelegt)
 ```
 
-> Hinweis: Das eigentliche `files.md`-Upstream-Repo wird **neben** diesem Repo geklont (z. B. nach `/opt/filesmd/files.md`).
+> Das `files.md`-Upstream-Repo wird **neben** diesem Repo geklont: `/opt/filesmd/files.md`
 
 ---
 
@@ -64,41 +56,28 @@ hAI.Files.MD/
 
 - Docker & Docker Compose
 - Portainer (optional, aber empfohlen)
-- Git für das Klonen von Repositories
+- Git
 
 ---
 
 ## 🛠️ Setup-Schritte (TL;DR)
 
-1. **Upstream-Repo klonen** (auf deinem Server):
+1. **Beide Repos klonen** (auf deinem Server):
    ```bash
-   cd /opt
-   mkdir -p filesmd
-   cd filesmd
+   sudo mkdir -p /opt/filesmd && cd /opt/filesmd
    git clone https://github.com/zakirullin/files.md.git
-   ```
-
-2. **Dieses Repo klonen** (hAI.Files.MD):
-   ```bash
-   cd /opt/filesmd
    git clone https://github.com/jbkunama1/hAI.Files.MD.git
-   cd hAI.Files.MD
+   mkdir -p hAI.Files.MD/app/storage hAI.Files.MD/app/tokens
    ```
 
-3. **SALT setzen** (einmalig generieren):
-   ```bash
-   head -c 32 /dev/urandom | base64
-   ```
-   Den Wert in `docker-compose.yml` bei `SALT=` eintragen.
-
-4. **Stack mit Docker Compose testen:**
+2. **Stack bauen und starten:**
    ```bash
    cd /opt/filesmd/hAI.Files.MD
-   docker compose build
+   docker compose build --no-cache
    docker compose up -d
    ```
 
-5. **Stack per Portainer deployen:**
+3. **Stack per Portainer deployen:**
    - In Portainer → *Stacks* → *Add stack*
    - Inhalt von `docker-compose.yml` einfügen
    - Stack deployen
@@ -107,125 +86,47 @@ hAI.Files.MD/
 
 ## 🌐 Nutzung
 
-### Frontend (PWA)
-
-- Aufruf im Browser:
-
-  ```
-  http://DEIN-SERVER:8080
-  ```
-
-### Sync-Server
-
-- Der Sync-Server läuft auf:
-
-  ```
-  http://DEIN-SERVER:3333
-  ```
-
-- In der `files.md`-PWA (DevTools-Konsole):
-
-  ```javascript
-  localStorage.setItem('ApiHost', 'http://DEIN-SERVER:3333');
-  ```
+- Aufruf im Browser: `http://DEIN-SERVER:8080`
+- Sync-API läuft auf demselben Port (eingebaut)
 
 ---
 
 ## 🧪 Anpassungen
 
-- **HOST** in `docker-compose.yml`
-- Ports bei Bedarf ändern (z. B. 8080 → 80 hinter Reverse Proxy)
+- **APP_URL** in `docker-compose.yml` auf deine Domain/IP setzen
+- Port 8080 bei Bedarf ändern (z. B. hinter Reverse Proxy auf 80/443)
 - Volumes an dein Backup-/Storage-Konzept anpassen
 
 ---
 
 ## 🐛 Problembehandlung
 
-### ❌ `path "/opt/filesmd/hAI.Files.MD" not found` (Portainer)
+### ❌ `path not found` (Portainer)
 
 Portainer findet den Build-Kontext nicht, weil die Repos noch nicht auf dem Server liegen.
 
-**Lösung:** Repos zuerst auf dem Server klonen:
-```bash
-sudo mkdir -p /opt/filesmd
-cd /opt/filesmd
-git clone https://github.com/zakirullin/files.md.git
-git clone https://github.com/jbkunama1/hAI.Files.MD.git
-mkdir -p hAI.Files.MD/data hAI.Files.MD/app/storage
-```
-
-Danach in `docker-compose.yml` absoluten Build-Kontext verwenden:
+**Lösung:** Repos zuerst klonen (siehe Setup-Schritte oben).
+Der `context` in `docker-compose.yml` muss auf den geklonten Upstream-Ordner zeigen:
 ```yaml
-  files-md-sync:
     build:
-      context: /opt/filesmd
-      dockerfile: /opt/filesmd/hAI.Files.MD/Dockerfile.sync
+      context: /opt/filesmd/files.md
+      dockerfile: /opt/filesmd/files.md/Dockerfile
 ```
 
 ---
 
-### ❌ Timeout beim `docker compose build`
+### ❌ Timeout beim Build
 
-Das `Dockerfile.sync` versucht `github.com/zakirullin/files.md.git` während des Builds zu klonen. Wenn der Server keinen ausreichenden Internetzugang hat, führt das zu einem Timeout.
-
-**Lösung:** Lokalen Build-Kontext verwenden – der Upstream-Ordner wird vom Host ins Image kopiert statt geclont.
-
-**Schritt 1 – Upstream-Repo lokal klonen** (falls noch nicht geschehen):
+Der Build liest nur lokale Dateien aus `/opt/filesmd/files.md` – kein Internet nötig.
+Wenn `go mod download` timeoutet, Docker-DNS prüfen:
 ```bash
-cd /opt/filesmd
-git clone https://github.com/zakirullin/files.md.git
+docker run --rm alpine sh -c "nslookup proxy.golang.org"
 ```
-
-**Schritt 2 – `Dockerfile.sync` anpassen:**
-```dockerfile
-# syntax=docker/dockerfile:1
-
-FROM golang:1.22-alpine AS builder
-
-WORKDIR /app
-
-COPY files.md/sync ./sync
-
-WORKDIR /app/sync
-
-RUN go mod download && go build -o /app/files-md-sync
-
-FROM alpine:3.19
-
-WORKDIR /app
-
-RUN adduser -D -h /app filesmd
-
-COPY --from=builder /app/files-md-sync /app/files-md-sync
-
-RUN mkdir -p /app/storage && chown -R filesmd:filesmd /app
-
-USER filesmd
-
-ENV HOST=0.0.0.0
-ENV PORT=3333
-ENV SALT=""
-
-EXPOSE 3333
-
-CMD ["/app/files-md-sync"]
-```
-
-**Schritt 3 – `docker-compose.yml` Build-Kontext auf übergeordneten Ordner setzen:**
-```yaml
-  files-md-sync:
-    build:
-      context: /opt/filesmd
-      dockerfile: /opt/filesmd/hAI.Files.MD/Dockerfile.sync
-```
-
-> ⚠️ `context: /opt/filesmd` ist zwingend nötig, damit `COPY files.md/sync` im Dockerfile funktioniert.
 
 ---
 
 ### ❌ Kein Internet aus Docker-Build heraus (Test)
 
-Prüfen ob der Server Internetzugang hat:
 ```bash
 curl -I https://github.com
 docker run --rm alpine sh -c "apk add git && git clone https://github.com/zakirullin/files.md.git /tmp/test"
