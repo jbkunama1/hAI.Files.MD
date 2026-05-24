@@ -12,8 +12,8 @@ services:
       - /opt/filesmd/hAI.Files.MD/app/storage:/app/storage
       - /opt/filesmd/hAI.Files.MD/app/tokens:/app/tokens
     environment:
-      - APP_URL=http://filesmd.arbeitermili.eu
-      - API_URL=http://filesmd.arbeitermili.eu
+      - APP_URL=http://MASKED_URL
+      - API_URL=http://MASKED_URL
       - STORAGE_DIR=/app/storage
       - TOKENS_DIR=/app/tokens
       - TOKENS_SALT=${TOKENS_SALT}
