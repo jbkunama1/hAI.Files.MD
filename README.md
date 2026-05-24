@@ -138,6 +138,53 @@ Wenn du denselben `TOKENS_SALT` auf mehreren Servern verwendest, sind Tokens ser
 
 ---
 
+## 💻📱🍎 Zugriff je Gerät
+
+### Laptop (Windows / macOS / Linux)
+
+1. Browser öffnen → `http://DEIN-SERVER:PORT`
+2. **F12** → Console → einmalig ausführen:
+   ```javascript
+   localStorage.setItem('ApiHost', 'http://DEIN-SERVER:PORT');
+   ```
+3. Seite neu laden
+
+**Optional:** In Chrome oder Edge als App installieren („Als App installieren“).
+
+### Android (Chrome)
+
+1. Chrome öffnen → `http://DEIN-SERVER:PORT`
+2. Menü (⋮) → **„Zum Startbildschirm hinzufügen“**
+3. Für den ApiHost in der URL-Leiste ausführen:
+   ```text
+   javascript:localStorage.setItem('ApiHost','http://DEIN-SERVER:PORT');
+   ```
+
+> ⚠️ Manche Android-Browser entfernen `javascript:` beim Einfügen. Dann erst `javascript:` tippen und danach den Rest ergänzen.
+
+### iPad (Safari)
+
+1. Safari öffnen → `http://DEIN-SERVER:PORT`
+2. Teilen-Button → **„Zum Home-Bildschirm“**
+3. ApiHost setzen über einen Bookmarklet-Link:
+   ```text
+   javascript:localStorage.setItem('ApiHost','http://DEIN-SERVER:PORT');
+   ```
+
+Alternativ über Safari-DevTools am Mac.
+
+### Prüfen ob Sync aktiv ist
+
+Auf jedem Gerät in der Konsole:
+
+```javascript
+localStorage.getItem('ApiHost');
+```
+
+Die Ausgabe sollte `http://DEIN-SERVER:PORT` sein.
+
+---
+
 ## 🌐 Von außerhalb des LANs zugreifen
 
 Folgende Optionen ermöglichen Zugriff unterwegs (Mobilnetz, anderes WLAN):

@@ -137,6 +137,53 @@ Using the same `TOKENS_SALT` across multiple servers makes tokens valid on all o
 
 ---
 
+## 💻📱🍎 Access by device
+
+### Laptop (Windows / macOS / Linux)
+
+1. Open browser → `http://YOUR-SERVER:PORT`
+2. **F12** → Console → run once:
+   ```javascript
+   localStorage.setItem('ApiHost', 'http://YOUR-SERVER:PORT');
+   ```
+3. Reload page
+
+**Optional:** Install as app in Chrome or Edge.
+
+### Android (Chrome)
+
+1. Open Chrome → `http://YOUR-SERVER:PORT`
+2. Menu (⋮) → **Add to Home screen**
+3. Set ApiHost in the address bar:
+   ```text
+   javascript:localStorage.setItem('ApiHost','http://YOUR-SERVER:PORT');
+   ```
+
+> ⚠️ Some Android browsers remove `javascript:` when pasted. Type `javascript:` first, then add the rest manually.
+
+### iPad (Safari)
+
+1. Open Safari → `http://YOUR-SERVER:PORT`
+2. Share button → **Add to Home Screen**
+3. Set ApiHost using a bookmarklet:
+   ```text
+   javascript:localStorage.setItem('ApiHost','http://YOUR-SERVER:PORT');
+   ```
+
+Alternative: use Safari DevTools from a Mac.
+
+### Check if sync is active
+
+On each device in the console:
+
+```javascript
+localStorage.getItem('ApiHost');
+```
+
+The output should be `http://YOUR-SERVER:PORT`.
+
+---
+
 ## 🌐 Accessing from outside your LAN
 
 Options for access on the go (mobile network, other Wi-Fi):

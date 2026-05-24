@@ -70,6 +70,27 @@ Tablet ──┘</code></pre>
     </div>
 
     <div class="card">
+      <h2>💻📱🍎 Zugriff je Gerät</h2>
+      <h3>💻 Laptop</h3>
+      <p>Browser öffnen → <code>http://DEIN-SERVER:PORT</code>, dann mit <code>F12</code> die Konsole öffnen und einmalig ausführen:</p>
+      <pre><code>localStorage.setItem('ApiHost', 'http://DEIN-SERVER:PORT');</code></pre>
+      <p>Optional in Chrome oder Edge als App installieren.</p>
+
+      <h3>📱 Android</h3>
+      <p>Chrome öffnen, Seite aufrufen, dann <strong>„Zum Startbildschirm hinzufügen“</strong>. Danach in der Adressleiste:</p>
+      <pre><code>javascript:localStorage.setItem('ApiHost','http://DEIN-SERVER:PORT');</code></pre>
+      <div class="warn">⚠️ Manche Android-Browser entfernen <code>javascript:</code> beim Einfügen. Dann zuerst <code>javascript:</code> tippen und den Rest ergänzen.</div>
+
+      <h3>🍎 iPad</h3>
+      <p>Safari öffnen, Seite aufrufen, dann über den Teilen-Button <strong>„Zum Home-Bildschirm“</strong> hinzufügen. ApiHost per Bookmarklet setzen:</p>
+      <pre><code>javascript:localStorage.setItem('ApiHost','http://DEIN-SERVER:PORT');</code></pre>
+
+      <h3>✅ Sync prüfen</h3>
+      <pre><code>localStorage.getItem('ApiHost');</code></pre>
+      <p>Die Ausgabe sollte <code>http://DEIN-SERVER:PORT</code> sein.</p>
+    </div>
+
+    <div class="card">
       <h2>🌐 Von außerhalb des LANs zugreifen</h2>
       <table>
         <tr><th>Option</th><th>Aufwand</th><th>Beschreibung</th></tr>
