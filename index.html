@@ -3,136 +3,185 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>hAI.Files.MD – Self-hosted files.md Stack</title>
+  <title>hAI.Files.MD</title>
   <style>
-    body { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 0; padding: 0; background: #0f172a; color: #e5e7eb; }
-    .container { max-width: 960px; margin: 0 auto; padding: 2rem 1rem 3rem; }
-    h1 { font-size: 2.4rem; margin-bottom: 0.5rem; }
-    h2 { margin-top: 2rem; }
-    h3 { margin-top: 1.5rem; color: #f87171; }
-    a { color: #38bdf8; text-decoration: none; }
-    a:hover { text-decoration: underline; }
-    .card { background: #020617; border-radius: 0.75rem; padding: 1.5rem; margin-top: 1.5rem; box-shadow: 0 20px 40px rgba(0,0,0,0.4); }
-    .lang-switch { margin-top: 1rem; }
-    .badge-row img { margin-right: 0.5rem; margin-top: 0.5rem; }
-    pre { background: #0f172a; border: 1px solid #1e293b; padding: 1rem; border-radius: 0.5rem; overflow-x: auto; }
-    code { font-family: SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 0.9em; }
-    table { width: 100%; border-collapse: collapse; margin-top: 1rem; font-size: 0.9em; }
-    th { text-align: left; padding: 0.5rem 0.75rem; background: #1e293b; color: #94a3b8; }
-    td { padding: 0.5rem 0.75rem; border-bottom: 1px solid #1e293b; }
-    td code { background: #1e293b; padding: 0.1em 0.4em; border-radius: 0.25rem; }
-    .warn { background: #1c1917; border-left: 3px solid #f59e0b; padding: 0.75rem 1rem; border-radius: 0 0.5rem 0.5rem 0; margin-top: 0.75rem; font-size: 0.9em; color: #fcd34d; }
-    .info { background: #0f2027; border-left: 3px solid #38bdf8; padding: 0.75rem 1rem; border-radius: 0 0.5rem 0.5rem 0; margin-top: 0.75rem; font-size: 0.9em; color: #7dd3fc; }
-    .tip { background: #052e16; border-left: 3px solid #4ade80; padding: 0.75rem 1rem; border-radius: 0 0.5rem 0.5rem 0; margin-top: 0.75rem; font-size: 0.9em; color: #86efac; }
+    :root {
+      --bg: #f7f6f2;
+      --surface: #f9f8f5;
+      --border: #d4d1ca;
+      --text: #28251d;
+      --muted: #7a7974;
+      --primary: #01696f;
+      --primary-hover: #0c4e54;
+      --code-bg: #edeae5;
+      --radius: 0.5rem;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; }
+    a { color: var(--primary); text-decoration: none; }
+    a:hover { color: var(--primary-hover); text-decoration: underline; }
+    header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 1.2rem 2rem; display: flex; align-items: center; gap: 1rem; }
+    header h1 { font-size: 1.4rem; font-weight: 700; letter-spacing: -0.01em; }
+    header span { font-size: 0.85rem; color: var(--muted); }
+    main { max-width: 860px; margin: 0 auto; padding: 2.5rem 1.5rem; }
+    .hero { text-align: center; padding: 2rem 0 2.5rem; }
+    .hero h2 { font-size: 2rem; font-weight: 700; margin-bottom: 0.5rem; }
+    .hero p { color: var(--muted); font-size: 1.05rem; max-width: 52ch; margin: 0 auto 1.5rem; }
+    .btn-group { display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap; }
+    .btn { display: inline-block; padding: 0.55rem 1.2rem; border-radius: var(--radius); font-size: 0.95rem; font-weight: 500; border: 1px solid transparent; cursor: pointer; transition: background 0.15s, border-color 0.15s; }
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-primary:hover { background: var(--primary-hover); text-decoration: none; }
+    .btn-secondary { background: var(--surface); border-color: var(--border); color: var(--text); }
+    .btn-secondary:hover { background: var(--code-bg); text-decoration: none; }
+    section { margin-bottom: 2.5rem; }
+    h3 { font-size: 1.15rem; font-weight: 700; margin-bottom: 1rem; padding-bottom: 0.4rem; border-bottom: 1px solid var(--border); }
+    .steps { display: flex; flex-direction: column; gap: 0.75rem; }
+    .step { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem 1.2rem; display: flex; gap: 1rem; align-items: flex-start; }
+    .step-num { background: var(--primary); color: #fff; border-radius: 50%; width: 1.6rem; height: 1.6rem; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 700; flex-shrink: 0; margin-top: 0.1rem; }
+    .step-content strong { display: block; margin-bottom: 0.2rem; }
+    .step-content p, .step-content code { font-size: 0.9rem; color: var(--muted); }
+    code { background: var(--code-bg); padding: 0.1rem 0.35rem; border-radius: 0.25rem; font-family: monospace; font-size: 0.88rem; color: var(--text); }
+    pre { background: var(--code-bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem 1.2rem; overflow-x: auto; margin: 0.75rem 0; }
+    pre code { background: none; padding: 0; font-size: 0.85rem; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    @media (max-width: 600px) { .grid { grid-template-columns: 1fr; } }
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.1rem 1.2rem; }
+    .card h4 { font-size: 1rem; font-weight: 600; margin-bottom: 0.4rem; }
+    .card p { font-size: 0.88rem; color: var(--muted); }
+    .badge { display: inline-block; background: var(--code-bg); border: 1px solid var(--border); border-radius: 999px; padding: 0.15rem 0.6rem; font-size: 0.75rem; color: var(--muted); margin-left: 0.5rem; }
+    .alert { background: #fffbe6; border: 1px solid #e6d27a; border-radius: var(--radius); padding: 0.85rem 1rem; font-size: 0.9rem; margin: 0.75rem 0; }
+    .alert strong { color: #7a6000; }
+    footer { text-align: center; color: var(--muted); font-size: 0.82rem; padding: 2rem 1rem; border-top: 1px solid var(--border); margin-top: 2rem; }
   </style>
 </head>
 <body>
-  <div class="container">
-    <div class="card">
-      <h1>hAI.Files.MD</h1>
-      <p>Self-hosted Docker stack for <a href="https://github.com/zakirullin/files.md" target="_blank" rel="noopener noreferrer">files.md</a> – PWA frontend &amp; sync server in one container.</p>
-      <div class="badge-row">
-        <img src="https://img.shields.io/badge/status-alpha-orange" alt="status" />
-        <img src="https://img.shields.io/badge/docker-compose-blue" alt="docker" />
-        <img src="https://img.shields.io/badge/license-MIT-green" alt="license" />
-      </div>
-      <div class="lang-switch" style="margin-top:1rem">
-        <strong>Language / Sprache:</strong>
-        <a href="./README.md">🇩🇪 Deutsch</a> ·
-        <a href="./README_en.md">🇬🇧 English</a>
-      </div>
-    </div>
 
-    <div class="card">
-      <h2>🛠️ Quick start</h2>
-      <pre><code>sudo mkdir -p /opt/filesmd && cd /opt/filesmd
-git clone https://github.com/zakirullin/files.md.git
-git clone https://github.com/jbkunama1/hAI.Files.MD.git
-mkdir -p hAI.Files.MD/app/storage hAI.Files.MD/app/tokens
+<header>
+  <h1>hAI.Files.MD</h1>
+  <span>Self-hosted files.md Instanz</span>
+</header>
 
-cd hAI.Files.MD
-# TOKENS_SALT in docker-compose.yml eintragen
-docker compose build --no-cache
-docker compose up -d
-</code></pre>
-      <div class="info">💡 <code>TOKENS_SALT</code> generieren: <code>head -c 32 /dev/urandom | base64</code></div>
-    </div>
+<main>
 
-    <div class="card">
-      <h2>🔄 Sync – gleiche MDs auf allen Geräten</h2>
-      <p>Einmalig pro Gerät in der <strong>DevTools-Konsole</strong> (F12 → Console) ausführen:</p>
-      <pre><code>localStorage.setItem('ApiHost', 'http://DEIN-SERVER:PORT');</code></pre>
-      <p>Ab sofort synct die PWA automatisch. Alle Geräte, die auf denselben Server zeigen, teilen dieselben Markdown-Dateien.</p>
-      <pre><code>Handy  ──┬
-PC     ──┼──►  http://SERVER:PORT  ──►  /app/storage
-Tablet ──┘</code></pre>
-      <div class="warn">⚠️ Ohne <code>API_URL</code> in der docker-compose.yml startet die Sync-API <strong>nicht</strong>!</div>
-    </div>
-
-    <div class="card">
-      <h2>💻📱🍎 Zugriff je Gerät</h2>
-      <h3>💻 Laptop</h3>
-      <p>Browser öffnen → <code>http://DEIN-SERVER:PORT</code>, dann mit <code>F12</code> die Konsole öffnen und einmalig ausführen:</p>
-      <pre><code>localStorage.setItem('ApiHost', 'http://DEIN-SERVER:PORT');</code></pre>
-      <p>Optional in Chrome oder Edge als App installieren.</p>
-
-      <h3>📱 Android</h3>
-      <p>Chrome öffnen, Seite aufrufen, dann <strong>„Zum Startbildschirm hinzufügen“</strong>. Danach in der Adressleiste:</p>
-      <pre><code>javascript:localStorage.setItem('ApiHost','http://DEIN-SERVER:PORT');</code></pre>
-      <div class="warn">⚠️ Manche Android-Browser entfernen <code>javascript:</code> beim Einfügen. Dann zuerst <code>javascript:</code> tippen und den Rest ergänzen.</div>
-
-      <h3>🍎 iPad</h3>
-      <p>Safari öffnen, Seite aufrufen, dann über den Teilen-Button <strong>„Zum Home-Bildschirm“</strong> hinzufügen. ApiHost per Bookmarklet setzen:</p>
-      <pre><code>javascript:localStorage.setItem('ApiHost','http://DEIN-SERVER:PORT');</code></pre>
-
-      <h3>✅ Sync prüfen</h3>
-      <pre><code>localStorage.getItem('ApiHost');</code></pre>
-      <p>Die Ausgabe sollte <code>http://DEIN-SERVER:PORT</code> sein.</p>
-    </div>
-
-    <div class="card">
-      <h2>🌐 Von außerhalb des LANs zugreifen</h2>
-      <table>
-        <tr><th>Option</th><th>Aufwand</th><th>Beschreibung</th></tr>
-        <tr><td>Domain + Portfreigabe</td><td>mittel</td><td>Port im Router weiterleiten, Domain auf öffentliche IP</td></tr>
-        <tr><td>VPN (WireGuard)</td><td>mittel</td><td>Gerät wählt sich per VPN ein, nutzt LAN-IP</td></tr>
-        <tr><td><strong>Cloudflare Tunnel</strong></td><td>gering</td><td>Kein offener Port, kostenlos, funktioniert hinter CGNAT</td></tr>
-      </table>
-      <div class="tip">💡 Empfehlung: <strong>Cloudflare Tunnel</strong> – kein offener Port, kein DynDNS, einfachste Einrichtung.</div>
-    </div>
-
-    <div class="card">
-      <h2>⚙️ Environment variables</h2>
-      <table>
-        <tr><th>Variable</th><th>Required</th><th>Description</th></tr>
-        <tr><td><code>APP_URL</code></td><td>recommended</td><td>URL of the web app</td></tr>
-        <tr><td><code>API_URL</code></td><td><strong>for sync</strong></td><td>Enables sync server – same URL as APP_URL is fine</td></tr>
-        <tr><td><code>STORAGE_DIR</code></td><td>yes</td><td>Notes storage path</td></tr>
-        <tr><td><code>TOKENS_DIR</code></td><td>yes</td><td>Auth tokens path</td></tr>
-        <tr><td><code>TOKENS_SALT</code></td><td>recommended</td><td>Random value for token signing</td></tr>
-        <tr><td><code>CERT_DIR</code></td><td>no</td><td>TLS certificate path (empty = HTTP only)</td></tr>
-        <tr><td><code>LOG_FILE</code></td><td>no</td><td>Log file path</td></tr>
-        <tr><td><code>STORAGE_QUOTA_KB</code></td><td>no</td><td>Storage limit per user in KB (default 1024)</td></tr>
-        <tr><td><code>BOT_API_TOKEN</code></td><td>no</td><td>Telegram bot token (optional)</td></tr>
-      </table>
-    </div>
-
-    <div class="card">
-      <h2>🐛 Troubleshooting</h2>
-      <h3>❌ path not found (Portainer)</h3>
-      <p>Repos zuerst klonen, dann absoluten Pfad in <code>docker-compose.yml</code> setzen:</p>
-      <pre><code>build:
-  context: /opt/filesmd/files.md
-  dockerfile: /opt/filesmd/files.md/Dockerfile</code></pre>
-
-      <h3>❌ Sync funktioniert nicht</h3>
-      <p>Prüfen ob <code>API_URL</code> gesetzt ist:</p>
-      <pre><code>docker inspect files-md | grep API_URL</code></pre>
-
-      <h3>❌ Timeout / kein Internet aus Docker</h3>
-      <pre><code>curl -I https://github.com
-docker run --rm alpine sh -c "nslookup proxy.golang.org"</code></pre>
+  <div class="hero">
+    <h2>Deine privaten Markdown-Notizen</h2>
+    <p>Privat. Lokal. Self-hosted. Synchronisiert über deinen eigenen Server und Telegram-Bot.</p>
+    <div class="btn-group">
+      <a href="README.md" class="btn btn-primary">📖 Dokumentation (DE)</a>
+      <a href="README_en.md" class="btn btn-secondary">📖 Documentation (EN)</a>
+      <a href="https://github.com/jbkunama1/hAI.Files.MD" target="_blank" rel="noopener" class="btn btn-secondary">GitHub Repo</a>
     </div>
   </div>
+
+  <!-- QUICKSTART -->
+  <section>
+    <h3>⚡ Quickstart</h3>
+    <pre><code>git clone https://github.com/jbkunama1/hAI.Files.MD.git
+cd hAI.Files.MD
+git clone https://github.com/zakirullin/files.md /opt/filesmd/files.md
+export TOKENS_SALT="$(head -c 32 /dev/urandom | base64)"
+export BOT_API_TOKEN="dein_telegram_bot_token"
+docker compose up -d</code></pre>
+  </section>
+
+  <!-- TELEGRAM BOT -->
+  <section>
+    <h3>🤖 Telegram-Bot einrichten <span class="badge">Pflicht für Sync-Login</span></h3>
+    <p style="color:var(--muted);font-size:0.9rem;margin-bottom:1rem;">Der Sync-Login läuft ausschließlich über einen Telegram-Bot. Ohne Bot ist kein Geräte-Login möglich.</p>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-content">
+          <strong>Bot erstellen via BotFather</strong>
+          <p>Telegram öffnen → <a href="https://t.me/BotFather" target="_blank">@BotFather</a> öffnen → <code>/newbot</code> eingeben → Name &amp; Username vergeben → <strong>API-Token kopieren</strong></p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-content">
+          <strong>Token in docker-compose.yml eintragen</strong>
+          <p><code>BOT_API_TOKEN=123456789:AAFxxxxxxx</code> als Umgebungsvariable setzen</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-content">
+          <strong>Container neu starten</strong>
+          <p><code>docker compose down &amp;&amp; docker compose up -d</code></p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-content">
+          <strong>Gerät verknüpfen</strong>
+          <p>Im Telegram-Bot <code>/app</code> eingeben → Link öffnen → Gerät ist verknüpft ✅</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="alert">
+      <strong>⚠️ Wichtig:</strong> <code>APP_URL</code> in der <code>docker-compose.yml</code> muss exakt mit der URL übereinstimmen, von der du die PWA aufrufst — inkl. <code>https://</code> und ohne Port.
+    </div>
+  </section>
+
+  <!-- SYNC METHODEN -->
+  <section>
+    <h3>🔄 Sync-Methoden</h3>
+    <div class="grid">
+      <div class="card">
+        <h4>📁 Local-first</h4>
+        <p>Kein Sync. Dateien bleiben auf dem Gerät. Maximale Privatsphäre.</p>
+      </div>
+      <div class="card">
+        <h4>☁️ Cloud-Ordner</h4>
+        <p>iCloud, Dropbox oder Google Drive als gemeinsamer Ordner. Kein eigener Server nötig.</p>
+      </div>
+      <div class="card">
+        <h4>🖥️ Self-hosted <span class="badge">diese Instanz</span></h4>
+        <p>Eigener Server mit Go-Binary. Volle Kontrolle über Daten.</p>
+      </div>
+      <div class="card">
+        <h4>🌐 Hosted</h4>
+        <p><code>api.files.md</code> — öffentlicher Server, sofort nutzbar ohne Setup.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- UMGEBUNGSVARIABLEN -->
+  <section>
+    <h3>⚙️ Wichtige Umgebungsvariablen</h3>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num" style="background:var(--muted)">🔑</div>
+        <div class="step-content">
+          <strong>BOT_API_TOKEN</strong>
+          <p>Telegram Bot Token von BotFather. Pflicht für Sync-Login.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num" style="background:var(--muted)">🌐</div>
+        <div class="step-content">
+          <strong>APP_URL / API_URL</strong>
+          <p>Exakte URL der PWA inkl. <code>https://</code>. Muss mit Browser-Origin übereinstimmen (CORS).</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num" style="background:var(--muted)">🔒</div>
+        <div class="step-content">
+          <strong>TOKENS_SALT</strong>
+          <p>Zufälliger Schlüssel zum Signieren von Auth-Tokens. Einmal generieren, sicher aufbewahren.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  MIT License &mdash; <a href="https://github.com/jbkunama1/hAI.Files.MD" target="_blank" rel="noopener">github.com/jbkunama1/hAI.Files.MD</a>
+  &mdash; Basiert auf <a href="https://github.com/zakirullin/files.md" target="_blank" rel="noopener">zakirullin/files.md</a>
+</footer>
+
 </body>
 </html>

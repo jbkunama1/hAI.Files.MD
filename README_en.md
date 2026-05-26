@@ -1,258 +1,169 @@
-# hAI.Files.MD 🇬🇧📚🧠
+# hAI.Files.MD
 
-> Self-hosted Docker stack for [files.md](https://github.com/zakirullin/files.md), optimized for Portainer and home lab environments.
+Self-hosted instance of [files.md](https://github.com/zakirullin/files.md) — a private, quiet space for your Markdown notes.
 
-![Status](https://img.shields.io/badge/status-alpha-orange)
-![Docker](https://img.shields.io/badge/docker-compose-blue)
-![License](https://img.shields.io/badge/license-MIT-green)
-![Made with Love](https://img.shields.io/badge/made%20with-%E2%9D%A4-red)
-
----
-
-## 🚀 Idea
-
-This repository provides a minimal yet practical structure to run `files.md` as a self-hosted Docker stack (e.g. via Portainer).
-
-Frontend (PWA) and sync API run in a **single container**, built directly from the official upstream repo.
+## Contents
+- [Quickstart](#quickstart)
+- [Sync Setup](#sync-setup)
+- [Telegram Bot Setup](#telegram-bot-setup)
+- [Link a New Device](#link-a-new-device)
+- [Docker Compose](#docker-compose)
+- [Environment Variables](#environment-variables)
+- [Directory Structure](#directory-structure)
 
 ---
 
-## 🧩 Architecture
+## Quickstart
 
-```text
-+-------------------------+
-|  Browser (Desktop/Mobile)|
-+------------+------------+
-             |
-             v
-   http://SERVER:PORT  (PWA + Sync API)
+```bash
+git clone https://github.com/jbkunama1/hAI.Files.MD.git
+cd hAI.Files.MD
+
+# Clone upstream files.md (required)
+git clone https://github.com/zakirullin/files.md /opt/filesmd/files.md
+
+# Generate salt
+export TOKENS_SALT="$(head -c 32 /dev/urandom | base64)"
+export BOT_API_TOKEN="your_telegram_bot_token"
+
+# Start
+docker compose up -d
 ```
 
-- One container serves both the frontend and the sync API.
-- The build uses the locally cloned upstream repo (`/opt/filesmd/files.md`).
-- Sync is enabled by setting `API_URL` in the environment.
-
 ---
 
-## 📁 Project structure
+## Sync Setup
 
-```text
-hAI.Files.MD/
-├── docker-compose.yml      # stack definition
-├── README.md               # German
-├── README_en.md            # English (this file)
-├── index.html              # GitHub Pages landing (DE/EN)
-├── LICENSE                 # MIT license
-└── app/
-    ├── storage/            # notes & logs volume (runtime)
-    └── tokens/             # auth tokens volume (runtime)
-```
+files.md supports multiple sync methods:
 
-> The `files.md` upstream repo is cloned **next to** this project: `/opt/filesmd/files.md`
-
----
-
-## 🔧 Requirements
-
-- Docker & Docker Compose
-- Portainer (optional)
-- Git
-
----
-
-## 🛠️ Setup steps (TL;DR)
-
-1. **Clone both repos** on your server:
-   ```bash
-   sudo mkdir -p /opt/filesmd && cd /opt/filesmd
-   git clone https://github.com/zakirullin/files.md.git
-   git clone https://github.com/jbkunama1/hAI.Files.MD.git
-   mkdir -p hAI.Files.MD/app/storage hAI.Files.MD/app/tokens
-   ```
-
-2. **Generate TOKENS_SALT** (once):
-   ```bash
-   head -c 32 /dev/urandom | base64
-   ```
-   Paste into `docker-compose.yml` at `TOKENS_SALT=`.
-
-3. **Build and start the stack:**
-   ```bash
-   cd /opt/filesmd/hAI.Files.MD
-   docker compose build --no-cache
-   docker compose up -d
-   ```
-
-4. **Deploy via Portainer:**
-   - Portainer → *Stacks* → *Add stack*
-   - Paste `docker-compose.yml`
-   - Set environment variable `TOKENS_SALT`
-   - Deploy stack
-
----
-
-## ⚙️ Environment variables
-
-| Variable | Required | Description |
+| Method | Description | Server needed |
 |---|---|---|
-| `APP_URL` | recommended | URL of the web app, e.g. `http://192.168.178.21:3333` |
-| `API_URL` | **required for sync** | Enables the sync server – can be the same URL as `APP_URL` |
-| `STORAGE_DIR` | yes | Path for notes files inside the container |
-| `TOKENS_DIR` | yes | Path for auth tokens inside the container |
-| `TOKENS_SALT` | recommended | Random value for token signing (generate once) |
-| `CERT_DIR` | no | Path to TLS certificates (empty = no HTTPS) |
-| `LOG_FILE` | no | Log file path (default `/tmp/server.log`) |
-| `STORAGE_QUOTA_KB` | no | Storage limit per user in KB (default 1024 = 1 MB) |
-| `BOT_API_TOKEN` | no | Telegram bot token (optional, without token = web-only) |
+| **Local-first** | Local only, no sync | No |
+| **Cloud folder** | iCloud / Dropbox / Google Drive | No |
+| **Self-hosted** | Your own server (this instance) | Yes |
+| **Hosted** | `api.files.md` (public) | No |
 
-> ⚠️ Without `API_URL` the sync API will not start!
+This instance uses **Self-hosted Sync** via the built-in Go server.
 
 ---
 
-## 🔄 Using sync – same MDs on all devices
+## Telegram Bot Setup
 
-### One-time setup per device
+The sync login works **exclusively via a Telegram Bot**. Without a bot, no device login is possible.
 
-Open the PWA in your browser, then in the **DevTools console** (F12 → Console):
+### Step 1 — Create a Bot
 
-```javascript
-localStorage.setItem('ApiHost', 'http://YOUR-SERVER:PORT');
+1. Open Telegram → open [@BotFather](https://t.me/BotFather)
+2. Send `/newbot`
+3. Enter a name, e.g. `MyFilesBot`
+4. Enter a username, e.g. `my_files_bot`
+5. **Copy the API token** (looks like: `123456789:AAFxxxxxxx`)
+
+### Step 2 — Set Bot Commands (optional but recommended)
+
+In BotFather → "Edit Commands" → paste the following list:
+
+```
+chat - 🏠 Home
+files - 📄 Files
+dirs - 🗂 Dirs
+checklists - ☑️ Checklists
+schedule - 📆 Schedule
+postpone - 🦥 Postpone
+rename - ✏️ Rename
+move - ➡️ Move
+app - 🔗 Open in app
+settings - ⚙️ Settings
+help - 📕 Help
 ```
 
-That’s it – the PWA will sync automatically from now on. All devices pointing to the same server share the same markdown files instantly.
+### Step 3 — Add Token to docker-compose.yml
 
-### How sync works
-
-```text
-Phone  ──┬
-PC     ──┼──►  http://SERVER:PORT  ──►  /app/storage
-Tablet ──┘
-```
-
-All devices read and write to the same server. Changes appear on all devices within seconds.
-
-### Multiple servers / shared salt
-
-Using the same `TOKENS_SALT` across multiple servers makes tokens valid on all of them. Different salts = fully independent instances.
-
----
-
-## 💻📱🍎 Access by device
-
-### Laptop (Windows / macOS / Linux)
-
-1. Open browser → `http://YOUR-SERVER:PORT`
-2. **F12** → Console → run once:
-   ```javascript
-   localStorage.setItem('ApiHost', 'http://YOUR-SERVER:PORT');
-   ```
-3. Reload page
-
-**Optional:** Install as app in Chrome or Edge.
-
-### Android (Chrome)
-
-1. Open Chrome → `http://YOUR-SERVER:PORT`
-2. Menu (⋮) → **Add to Home screen**
-3. Set ApiHost in the address bar:
-   ```text
-   javascript:localStorage.setItem('ApiHost','http://YOUR-SERVER:PORT');
-   ```
-
-> ⚠️ Some Android browsers remove `javascript:` when pasted. Type `javascript:` first, then add the rest manually.
-
-### iPad (Safari)
-
-1. Open Safari → `http://YOUR-SERVER:PORT`
-2. Share button → **Add to Home Screen**
-3. Set ApiHost using a bookmarklet:
-   ```text
-   javascript:localStorage.setItem('ApiHost','http://YOUR-SERVER:PORT');
-   ```
-
-Alternative: use Safari DevTools from a Mac.
-
-### Check if sync is active
-
-On each device in the console:
-
-```javascript
-localStorage.getItem('ApiHost');
-```
-
-The output should be `http://YOUR-SERVER:PORT`.
-
----
-
-## 🌐 Accessing from outside your LAN
-
-Options for access on the go (mobile network, other Wi-Fi):
-
-| Option | Effort | Description |
-|---|---|---|
-| **Domain + port forwarding** | medium | Forward port in router to server, domain points to public IP |
-| **VPN (e.g. WireGuard)** | medium | Device connects via VPN to home network, uses LAN IP |
-| **Cloudflare Tunnel** | low | No open port needed, free, works behind CGNAT |
-
-> 💡 Recommended for beginners: **Cloudflare Tunnel** – no open port, no DynDNS required.
-
----
-
-## 🌐 Usage
-
-- **Web app:** `http://YOUR-SERVER:PORT`
-- **Sync:** runs automatically on the same port once `API_URL` is set
-
----
-
-## 🧪 Customization
-
-- Set **APP_URL / API_URL** to your domain or LAN IP
-- Change port if needed (e.g. behind reverse proxy on 80/443)
-- Increase `STORAGE_QUOTA_KB` for more storage per user
-- Adjust volumes to your backup strategy
-
----
-
-## 🐛 Troubleshooting
-
-### ❌ `path not found` (Portainer)
-
-Portainer cannot find the build context because the repos have not been cloned yet.
-
-**Fix:** Clone repos first (see Setup steps above).
 ```yaml
-    build:
-      context: /opt/filesmd/files.md
-      dockerfile: /opt/filesmd/files.md/Dockerfile
+environment:
+  - BOT_API_TOKEN=123456789:AAFxxxxxxx
+  - APP_URL=https://your-domain.com
+  - API_URL=https://your-domain.com
+  - TOKENS_SALT=${TOKENS_SALT}
+  - STORAGE_DIR=/app/storage
+  - TOKENS_DIR=/app/tokens
 ```
 
----
-
-### ❌ Sync not working
-
-Check if `API_URL` is set:
-```bash
-docker inspect files-md | grep API_URL
-```
-
----
-
-### ❌ Timeout during build / no internet from Docker
+### Step 4 — Restart the Container
 
 ```bash
-curl -I https://github.com
-docker run --rm alpine sh -c "nslookup proxy.golang.org"
+docker compose down && docker compose up -d
+
+# Verify bot is running
+docker logs files-md --tail 30
 ```
 
 ---
 
-## 📜 License
+## Link a New Device
 
-This project is licensed under the MIT License. See [LICENSE](./LICENSE).
+Once the bot is running, link a new device like this:
+
+1. **Open your Telegram Bot** (the one you created in Step 1)
+2. Send `/app`
+3. The bot replies with a **link** → open this link in your browser
+4. Device is now linked ✅
+
+Repeat for each additional device (phone, second PC, tablet).
+
+> **Important:** `APP_URL` in `docker-compose.yml` must exactly match the URL
+> you use to open the PWA — including `https://` and without a port number.
 
 ---
 
-## 🌍 Other languages
+## Docker Compose
 
-- 🇩🇪 [README.md](./README.md)
+```bash
+# Start
+docker compose up -d
+
+# Stop
+docker compose down
+
+# View logs
+docker logs files-md --tail 50
+
+# Rebuild after changes
+docker compose up -d --build
+```
+
+---
+
+## Environment Variables
+
+| Variable | Description | Example |
+|---|---|---|
+| `BOT_API_TOKEN` | Telegram Bot Token from BotFather | `123456:AAFxxx` |
+| `APP_URL` | PWA URL (must match exactly!) | `https://your-domain.com` |
+| `API_URL` | Sync API URL (usually same as APP_URL) | `https://your-domain.com` |
+| `TOKENS_SALT` | Random key for signing tokens | `$(head -c 32 /dev/urandom \| base64)` |
+| `STORAGE_DIR` | Path to storage directory | `/app/storage` |
+| `TOKENS_DIR` | Path to tokens directory | `/app/tokens` |
+| `CERT_DIR` | TLS certificate directory (empty = no internal HTTPS) | `/opt/certs` |
+| `LOG_FILE` | Path to log file | `/app/storage/server.log` |
+
+---
+
+## Directory Structure
+
+```
+hAI.Files.MD/
+├── docker-compose.yml    # Docker configuration
+├── Dockerfile.sync       # Build file for the sync server
+├── .gitignore
+├── LICENSE               # MIT
+├── README.md             # German documentation
+├── README_en.md          # This file (English)
+└── index.html            # Landing page / GitHub Pages
+```
+
+---
+
+## License
+
+MIT — see [LICENSE](LICENSE)
